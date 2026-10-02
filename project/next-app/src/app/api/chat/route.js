@@ -62,8 +62,7 @@ export async function POST(request) {
             model: "openai/gpt-oss-120b", 
             messages: messages,
             tools: tools,
-            tool_choice: "auto",
-            response_format: { type: "json_object" }
+            tool_choice: "auto"
         });
 
         const responseMessage = response.choices[0].message;
@@ -113,9 +112,15 @@ export async function POST(request) {
             loopCount++;
         } else {
             // No more tool calls, we have our final synthesized answer in JSON format
-            const rawOutput = responseMessage.content;
+            const rawOutput = responseMessage.content || "";
+            let jsonString = rawOutput;
+            // Clean markdown backticks if present
+            const jsonMatch = rawOutput.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+            if (jsonMatch) {
+                jsonString = jsonMatch[1];
+            }
             try {
-                let parsed = JSON.parse(rawOutput);
+                let parsed = JSON.parse(jsonString);
                 finalAnswerText = parsed.answer || rawOutput;
                 
                 // Map the citations so the frontend can display them properly
