@@ -1,0 +1,131 @@
+/* Stunning Modern Chat UI Enhancements */
+
+/* Workspace & Panel Backgrounds */
+.chat-workspace {
+  background: transparent;
+}
+.chat-panel {
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 12px 40px rgba(13, 118, 105, 0.08) !important;
+  border-radius: 24px !important;
+  overflow: hidden;
+}
+
+/* Scroll area */
+.messages-scroll {
+  padding: 30px 40px !important;
+}
+
+/* Message Groups & Animations */
+.message-group {
+  border-bottom: none !important;
+  margin-bottom: 28px !important;
+  animation: slideInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0 !important;
+}
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Rows alignment */
+.question-row, .answer-row {
+  display: flex;
+  gap: 16px !important;
+  align-items: flex-end !important;
+}
+.question-row {
+  flex-direction: row-reverse; /* Align user to the right */
+}
+
+/* Avatars */
+.question-row .user-avatar {
+  background: linear-gradient(135deg, #0d7669, #1aa492) !important;
+  box-shadow: 0 4px 12px rgba(13, 118, 105, 0.3) !important;
+  color: white !important;
+}
+.answer-row .assistant-avatar {
+  background: linear-gradient(135deg, #1f2937, #4b5563) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* User Bubble (Right) */
+.question-row > div:nth-child(2) {
+  background: linear-gradient(135deg, #0d7669, #096c60);
+  color: white;
+  padding: 16px 22px;
+  border-radius: 20px 20px 4px 20px;
+  box-shadow: 0 6px 20px rgba(13, 118, 105, 0.25);
+  max-width: 75%;
+}
+.question-row p {
+  color: white !important;
+  font-size: 15px !important;
+  margin: 0 !important;
+  font-weight: 500;
+}
+.question-row .message-label {
+  display: none !important; /* Hide 'You' label for cleaner look */
+}
+
+/* Assistant Bubble (Left) */
+.answer-content {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  padding: 22px 28px;
+  border-radius: 20px 20px 20px 4px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  max-width: 85%;
+}
+.answer-content > p {
+  color: #1f2937 !important;
+  font-size: 15px !important;
+  line-height: 1.75 !important;
+  margin-top: 8px !important;
+}
+
+/* Composer (Input area) */
+.composer {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.9) !important;
+  padding: 20px 28px 16px !important;
+}
+.composer textarea {
+  font-size: 15px !important;
+  color: #1f2937 !important;
+}
+
+/* Citations */
+.citation-list {
+  background: #f3f7f5;
+  border-radius: 16px;
+  padding: 16px !important;
+  margin-top: 20px !important;
+  border: 1px solid #e2ece7;
+}
+.citation-card {
+  background: white !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03) !important;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+  margin-bottom: 10px !important;
+}
+.citation-card:hover {
+  border-color: #0d7669 !important;
+  box-shadow: 0 6px 16px rgba(13, 118, 105, 0.12) !important;
+  transform: translateY(-2px) !important;
+}
+.citation-quote {
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  color: #4b5563 !important;
+}
+
+/* Markdown parsing support in p tag if needed later */
+.answer-content > p {
+  white-space: pre-wrap; /* Keeps paragraphs structured nicely */
+}
