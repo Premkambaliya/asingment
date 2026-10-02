@@ -70,7 +70,7 @@ export async function POST(request) {
     let messages = [
       { 
           role: "system", 
-          content: "You are an expert legal AI assistant. Your goal is to answer the user's question accurately. Use your tools (search_document, list_clauses) to read the user's documents before answering. You MUST use tools to find specific facts.\n\nCRITICAL RULES:\n- If the answer is not in the document, you MUST say so instead of inventing or hallucinating one.\n- When you are ready to give your final answer, you MUST call the `submit_answer` tool." 
+          content: "You are an expert legal AI assistant. Your goal is to answer the user's question accurately. Use your tools (search_document, list_clauses) to read the user's documents before answering. You MUST use tools to find specific facts.\n\nCRITICAL RULES:\n- If you cannot find the answer after 1 or 2 searches, DO NOT keep searching. Stop and call `submit_answer` immediately.\n- If the answer is not in the document, you MUST say so in your final answer instead of inventing or hallucinating one.\n- When you are ready to give your final answer, you MUST call the `submit_answer` tool. Never output the answer as plain text." 
       },
       { 
           role: "user", 
@@ -172,7 +172,10 @@ export async function POST(request) {
     }
 
     if (!finalAnswerText) {
-        throw new Error("Agentic loop failed to produce a final answer.");
+        return new Response(JSON.stringify({ 
+            answer: "The AI searched the document several times but couldn't find a definitive answer. Please try rephrasing your question.",
+            citations: [] 
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
   } catch (error) {
     console.error("Groq API Error:", error);
