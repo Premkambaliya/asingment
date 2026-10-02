@@ -38,13 +38,39 @@ export async function POST(request) {
             required: []
           }
         }
+      },
+      {
+        type: "function",
+        function: {
+          name: "submit_answer",
+          description: "Submit your final synthesized answer and citations. Call this tool when you are done researching.",
+          parameters: {
+            type: "object",
+            properties: {
+                answer: { type: "string", description: "Your detailed text answer." },
+                citations: { 
+                    type: "array", 
+                    description: "Array of exact quotes used from the documents.",
+                    items: {
+                        type: "object",
+                        properties: {
+                            quote: { type: "string", description: "The EXACT string you copied from the document." },
+                            documentName: { type: "string", description: "The name of the document." }
+                        },
+                        required: ["quote", "documentName"]
+                    }
+                }
+            },
+            required: ["answer", "citations"]
+          }
+        }
       }
     ];
 
     let messages = [
       { 
           role: "system", 
-          content: "You are an expert legal AI assistant. Your goal is to answer the user's question accurately. Use your tools (search_document, list_clauses) to read the user's documents before answering. You MUST use tools to find specific facts.\n\nCRITICAL RULES:\n- If the answer is not in the document, you MUST say so instead of inventing or hallucinating one.\n- When you are ready to give your final answer (i.e. you are no longer calling tools), you MUST output valid JSON containing:\n  1. 'answer': Your detailed text answer.\n  2. 'citations': An array of objects, each containing 'quote' (the EXACT string you copied from the document) and 'documentName' (the name of the document it came from)." 
+          content: "You are an expert legal AI assistant. Your goal is to answer the user's question accurately. Use your tools (search_document, list_clauses) to read the user's documents before answering. You MUST use tools to find specific facts.\n\nCRITICAL RULES:\n- If the answer is not in the document, you MUST say so instead of inventing or hallucinating one.\n- When you are ready to give your final answer, you MUST call the `submit_answer` tool." 
       },
       { 
           role: "user", 
@@ -80,7 +106,32 @@ export async function POST(request) {
                     args = {}; 
                 }
 
-                if (call.function.name === 'search_document') {
+                if (call.function.name === 'submit_answer') {
+                    // AI has submitted the final answer via tool call
+                    let parsed = args;
+                    finalAnswerText = parsed.answer || "";
+                    
+                    const finalCitations = (parsed.citations || []).map((cit, idx) => {
+                        const doc = documents.find(d => d.name === cit.documentName) || documents[0];
+                        const normalize = (val) => (val||'').toLowerCase().replace(/\s+/g, ' ').trim();
+                        const isVerified = doc ? normalize(doc.extracted_text).includes(normalize(cit.quote)) : false;
+                        
+                        return {
+                            id: `api-cit-${Date.now()}-${idx}`,
+                            documentId: doc ? doc.id : 'unknown',
+                            documentName: cit.documentName,
+                            quote: cit.quote,
+                            verified: isVerified,
+                            start: 0
+                        };
+                    });
+                    
+                    return new Response(JSON.stringify({ 
+                        answer: finalAnswerText,
+                        citations: finalCitations
+                    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+                }
+                else if (call.function.name === 'search_document') {
                     const query = (args.query || "").toLowerCase();
                     const matches = [];
                     for (const doc of documents) {
@@ -111,45 +162,12 @@ export async function POST(request) {
             }
             loopCount++;
         } else {
-            // No more tool calls, we have our final synthesized answer in JSON format
-            const rawOutput = responseMessage.content || "";
-            let jsonString = rawOutput;
-            // Clean markdown backticks if present
-            const jsonMatch = rawOutput.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-            if (jsonMatch) {
-                jsonString = jsonMatch[1];
-            }
-            try {
-                let parsed = JSON.parse(jsonString);
-                finalAnswerText = parsed.answer || rawOutput;
-                
-                // Map the citations so the frontend can display them properly
-                const finalCitations = (parsed.citations || []).map((cit, idx) => {
-                    const doc = documents.find(d => d.name === cit.documentName) || documents[0];
-                    const normalize = (val) => (val||'').toLowerCase().replace(/\s+/g, ' ').trim();
-                    const isVerified = doc ? normalize(doc.extracted_text).includes(normalize(cit.quote)) : false;
-                    
-                    return {
-                        id: `api-cit-${Date.now()}-${idx}`,
-                        documentId: doc ? doc.id : 'unknown',
-                        documentName: cit.documentName,
-                        quote: cit.quote,
-                        verified: isVerified,
-                        start: 0
-                    };
-                });
-                
-                return new Response(JSON.stringify({ 
-                    answer: finalAnswerText,
-                    citations: finalCitations
-                }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-            } catch (e) {
-                console.error("Failed to parse AI JSON output:", e);
-                return new Response(JSON.stringify({ 
-                    answer: rawOutput,
-                    citations: [] 
-                }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-            }
+            // Fallback if AI decides to just output text instead of calling submit_answer
+            finalAnswerText = responseMessage.content || "";
+            return new Response(JSON.stringify({ 
+                answer: finalAnswerText,
+                citations: [] 
+            }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
     }
 
