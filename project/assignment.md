@@ -134,3 +134,4 @@ flowchart TD
     *   *Directory:* `project/next-app/`
 *   **For the AI, use any provider (OpenAI, Anthropic, Gemini). Read the API key, base URL and model name from environment variables.** [Already Done]
     *   *Main file:* `next-app/src/app/api/chat/route.js` (Integrated Groq SDK for OpenAI compatibility).
+
