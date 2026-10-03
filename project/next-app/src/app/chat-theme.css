@@ -129,3 +129,210 @@
 .answer-content > p {
   white-space: pre-wrap; /* Keeps paragraphs structured nicely */
 }
+
+/* =========================================================
+   COMPARE PAGE UI REFRESH
+   Premium, Modern, Glassmorphism Aesthetics
+   ========================================================= */
+
+.compare-page {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Compare Selectors (Glassmorphism Floating Bar) */
+.compare-selectors {
+  background: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 15px 35px rgba(13, 118, 105, 0.08), 0 5px 15px rgba(0,0,0,0.03) !important;
+  padding: 24px !important;
+  gap: 20px !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.compare-selectors:hover {
+  box-shadow: 0 20px 45px rgba(13, 118, 105, 0.12), 0 8px 20px rgba(0,0,0,0.04) !important;
+  transform: translateY(-2px);
+}
+
+.compare-selectors label {
+  color: #4b5563 !important;
+  font-weight: 800 !important;
+  letter-spacing: 1.2px !important;
+  font-size: 11px !important;
+  margin-bottom: 10px !important;
+}
+
+.compare-selectors select {
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid #e2ece7 !important;
+  border-radius: 12px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #1f2937 !important;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+  cursor: pointer;
+}
+
+.compare-selectors select:hover, .compare-selectors select:focus {
+  border-color: #0d7669 !important;
+  box-shadow: 0 0 0 3px rgba(13, 118, 105, 0.1) !important;
+  outline: none;
+}
+
+.compare-arrow {
+  background: linear-gradient(135deg, #0d7669, #1aa492) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(13, 118, 105, 0.3) !important;
+  width: 44px !important;
+  height: 44px !important;
+  transition: transform 0.3s ease;
+}
+
+.compare-arrow:hover {
+  transform: scale(1.1) rotate(180deg);
+}
+
+/* Diff Card (The Main Container) */
+.diff-card {
+  background: #ffffff !important;
+  border-radius: 24px !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.06), 0 2px 10px rgba(0,0,0,0.02) !important;
+  border: 1px solid #f3f4f6 !important;
+  overflow: hidden;
+}
+
+.diff-summary {
+  background: #f9fafb !important;
+  padding: 24px 32px !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.diff-summary span {
+  color: #6b7280 !important;
+  font-weight: 700 !important;
+}
+
+.diff-summary strong {
+  color: #111827 !important;
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  background: linear-gradient(135deg, #0d7669, #0f172a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Diff Rows */
+.diff-row {
+  padding: 32px !important;
+  border-bottom: 1px solid #f3f4f6 !important;
+  transition: background 0.2s ease;
+}
+
+.diff-row:hover {
+  background: #fafaf9 !important;
+}
+
+.diff-number {
+  background: #f3f4f6 !important;
+  color: #6b7280 !important;
+  font-weight: 800 !important;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 14px !important;
+}
+
+.diff-title strong {
+  font-size: 16px !important;
+  color: #111827 !important;
+}
+
+/* Badges */
+.change-badge {
+  padding: 6px 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase;
+}
+
+.change-badge.added {
+  background: #dcfce7 !important;
+  color: #166534 !important;
+}
+
+.change-badge.updated {
+  background: #fef9c3 !important;
+  color: #854d0e !important;
+}
+
+.diff-body > p {
+  color: #6b7280 !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  margin: 12px 0 20px !important;
+}
+
+/* Diff Columns */
+.diff-columns {
+  gap: 20px !important;
+}
+
+.diff-old, .diff-new {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+  padding: 20px !important;
+  border-radius: 16px !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02) !important;
+}
+
+.diff-old {
+  background: #fef2f2 !important;
+  color: #991b1b !important;
+  border: 1px solid #fee2e2 !important;
+  border-left: 4px solid #ef4444 !important;
+}
+
+.diff-new {
+  background: #f0fdf4 !important;
+  color: #166534 !important;
+  border: 1px solid #dcfce7 !important;
+  border-left: 4px solid #22c55e !important;
+}
+
+/* Empty States */
+.compare-empty {
+  background: rgba(255,255,255,0.5) !important;
+  backdrop-filter: blur(10px);
+  border-radius: 24px !important;
+  border: 1px dashed #cbd5e1 !important;
+  padding: 60px 20px !important;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.02) !important;
+}
+
+.compare-empty .empty-icon {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 20px !important;
+  margin-bottom: 24px !important;
+}
+
+.compare-empty h3 {
+  color: #1e293b !important;
+  font-size: 22px !important;
+  font-weight: 800 !important;
+}
