@@ -11,164 +11,66 @@ export async function POST(request) {
 
     const groq = new Groq({ apiKey });
     
-    // Tools array formatted for Groq / OpenAI
-    const tools = [
-      {
-        type: "function",
-        function: {
-          name: "search_document",
-          description: "Search the legal documents for a specific exact phrase or keyword. Returns matching paragraphs.",
-          parameters: {
-            type: "object",
-            properties: { 
-                query: { type: "string", description: "The keyword or phrase to search for." } 
-            },
-            required: ["query"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "list_clauses",
-          description: "Get a list of all major clause headings in the document to understand its structure.",
-          parameters: {
-            type: "object",
-            properties: {},
-            required: []
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "submit_answer",
-          description: "Submit your final synthesized answer and citations. Call this tool when you are done researching.",
-          parameters: {
-            type: "object",
-            properties: {
-                answer: { type: "string", description: "Your detailed text answer." },
-                citations: { 
-                    type: "array", 
-                    description: "Array of exact quotes used from the documents.",
-                    items: {
-                        type: "object",
-                        properties: {
-                            quote: { type: "string", description: "The EXACT string you copied from the document." },
-                            documentName: { type: "string", description: "The name of the document." }
-                        },
-                        required: ["quote", "documentName"]
-                    }
-                }
-            },
-            required: ["answer", "citations"]
-          }
-        }
-      }
-    ];
+    const tools = [ { type: "function", function: { name: "submit_answer", description: "Submit your final synthesized answer and citations.", parameters: { type: "object", properties: { answer: { type: "string", description: "Your detailed text answer." }, citations: { type: "array", description: "Array of exact quotes used from the documents.", items: { type: "object", properties: { quote: { type: "string", description: "The EXACT string you copied from the document." }, documentName: { type: "string", description: "The name of the document." } }, required: ["quote", "documentName"] } } }, required: ["answer", "citations"] } } } ];
+
+    let contextDocs = documents.map(d => `Document Name: ${d.name}\n\nContent:\n${d.extracted_text}`).join('\n\n---\n\n');
 
     let messages = [
       { 
           role: "system", 
-          content: "You are an expert legal AI assistant. Your goal is to answer the user's question accurately. Use your tools (search_document, list_clauses) to read the user's documents before answering. You MUST use tools to find specific facts.\n\nCRITICAL RULES:\n- If you cannot find the answer after 1 or 2 searches, DO NOT keep searching. Stop and call `submit_answer` immediately.\n- If the answer is not in the document, you MUST say so in your final answer instead of inventing or hallucinating one.\n- When you are ready to give your final answer, you MUST call the `submit_answer` tool. Never output the answer as plain text." 
+          content: `You are an expert legal AI assistant. Your goal is to answer the user's question accurately based ONLY on the provided documents.
+
+CRITICAL RULES:
+- If the answer is not in the document, you MUST say so in your final answer instead of inventing or hallucinating one.
+- You MUST call the \`submit_answer\` tool to provide your answer.
+- Never output the answer as plain text.
+
+DOCUMENTS TO ANALYZE:
+${contextDocs}`
       },
-      { 
-          role: "user", 
-          content: question 
-      }
+      { role: "user", content: question }
     ];
 
     let finalAnswerText = "";
-    let loopCount = 0;
+    
+    const response = await groq.chat.completions.create({
+        model: "openai/gpt-oss-120b", 
+        messages: messages,
+        tools: tools,
+        tool_choice: { type: "function", function: { name: "submit_answer" } }
+    });
 
-    // The Agentic Loop: Keep executing tools as long as the AI asks for them
-    while (loopCount < 5) {
-        const response = await groq.chat.completions.create({
-            // Using currently supported 2026 GPT model on Groq
-            model: "openai/gpt-oss-120b", 
-            messages: messages,
-            tools: tools,
-            tool_choice: "auto"
-        });
+    const responseMessage = response.choices[0].message;
+    const toolCalls = responseMessage.tool_calls;
 
-        const responseMessage = response.choices[0].message;
-        const toolCalls = responseMessage.tool_calls;
-
-        if (toolCalls && toolCalls.length > 0) {
-            messages.push(responseMessage); // Add assistant message with tool_calls
-            
-            for (const call of toolCalls) {
-                let functionResponse = {};
+    if (toolCalls && toolCalls.length > 0) {
+        for (const call of toolCalls) {
+            if (call.function.name === 'submit_answer') {
                 let args;
-                try { 
-                    args = JSON.parse(call.function.arguments); 
-                } catch(e) { 
-                    args = {}; 
-                }
-
-                if (call.function.name === 'submit_answer') {
-                    // AI has submitted the final answer via tool call
-                    let parsed = args;
-                    finalAnswerText = parsed.answer || "";
+                try { args = JSON.parse(call.function.arguments); } catch(e) { args = {}; }
+                
+                finalAnswerText = args.answer || "";
+                const finalCitations = (args.citations || []).map((cit, idx) => {
+                    const doc = documents.find(d => d.name === cit.documentName) || documents[0];
+                    const normalize = (val) => (val||'').toLowerCase().replace(/\s+/g, ' ').trim();
+                    const isVerified = doc ? normalize(doc.extracted_text).includes(normalize(cit.quote)) : false;
                     
-                    const finalCitations = (parsed.citations || []).map((cit, idx) => {
-                        const doc = documents.find(d => d.name === cit.documentName) || documents[0];
-                        const normalize = (val) => (val||'').toLowerCase().replace(/\s+/g, ' ').trim();
-                        const isVerified = doc ? normalize(doc.extracted_text).includes(normalize(cit.quote)) : false;
-                        
-                        return {
-                            id: `api-cit-${Date.now()}-${idx}`,
-                            documentId: doc ? doc.id : 'unknown',
-                            documentName: cit.documentName,
-                            quote: cit.quote,
-                            verified: isVerified,
-                            start: 0
-                        };
-                    });
-                    
-                    return new Response(JSON.stringify({ 
-                        answer: finalAnswerText,
-                        citations: finalCitations
-                    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-                }
-                else if (call.function.name === 'search_document') {
-                    const query = (args.query || "").toLowerCase();
-                    const matches = [];
-                    for (const doc of documents) {
-                        const blocks = doc.extracted_text.split('\n\n').filter(p => p.trim());
-                        for (const block of blocks) {
-                            if (block.toLowerCase().includes(query)) {
-                                matches.push(`[${doc.name}]: ${block}`);
-                            }
-                        }
-                    }
-                    functionResponse = { matches: matches.length ? matches.slice(0, 10) : ["No matches found."] };
-                } 
-                else if (call.function.name === 'list_clauses') {
-                    const clauses = [];
-                    for (const doc of documents) {
-                        const matches = doc.extracted_text.match(/^(\d+\.\s+[^\n]+)/gm);
-                        if (matches) clauses.push(`[${doc.name}]:\n${matches.join('\n')}`);
-                    }
-                    functionResponse = { clauses: clauses.length ? clauses : ["No numbered clauses found."] };
-                }
-
-                messages.push({
-                    tool_call_id: call.id,
-                    role: "tool",
-                    name: call.function.name,
-                    content: JSON.stringify(functionResponse),
+                    return {
+                        id: `api-cit-${Date.now()}-${idx}`,
+                        documentId: doc ? doc.id : 'unknown',
+                        documentName: cit.documentName,
+                        quote: cit.quote,
+                        verified: isVerified,
+                        start: 0
+                    };
                 });
+                
+                return new Response(JSON.stringify({ answer: finalAnswerText, citations: finalCitations }), { status: 200, headers: { 'Content-Type': 'application/json' } });
             }
-            loopCount++;
-        } else {
-            // Fallback if AI decides to just output text instead of calling submit_answer
-            finalAnswerText = responseMessage.content || "";
-            return new Response(JSON.stringify({ 
-                answer: finalAnswerText,
-                citations: [] 
-            }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
+    } else {
+        finalAnswerText = responseMessage.content || "";
+        return new Response(JSON.stringify({ answer: finalAnswerText, citations: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
     if (!finalAnswerText) {
